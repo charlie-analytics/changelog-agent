@@ -1,0 +1,36 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Changelog Agent</title>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--fg:#e8eaf0;--mut:#8b93a7;--acc:#7c9cff;--ok:#4ade80;--bd:#262b36}
+@media(prefers-color-scheme:light){:root{--bg:#f6f7fb;--card:#fff;--fg:#14171f;--mut:#5b6478;--acc:#3b5bdb;--ok:#15803d;--bd:#dde1ea}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:28px 16px}h1{margin:0 0 4px;font-size:24px}p.s{color:var(--mut);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px}
+.row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}@media(max-width:700px){.row{grid-template-columns:1fr 1fr}}
+label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px}
+input,select{width:100%;padding:9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);font:inherit}
+button{margin-top:12px;padding:10px 18px;border:0;border-radius:8px;background:var(--acc);color:#fff;font:600 15px inherit;cursor:pointer}
+.out{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}@media(max-width:700px){.out{grid-template-columns:1fr}}
+pre{white-space:pre-wrap;margin:0;font:13px/1.5 ui-monospace,monospace}h3{margin:0 0 8px;font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+#st{margin-top:12px;color:var(--mut);font-size:13px}.pill{color:var(--ok);font-weight:600}
+</style></head><body><main>
+<h1>Changelog Agent</h1><p class="s">Point it at any local git repo. Get release notes in seconds.</p>
+<div class="card"><div class="row">
+<div><label for="repo">Repo path</label><input id="repo" value="."></div>
+<div><label for="from">From (blank = latest tag)</label><input id="from" placeholder="v1.0.0"></div>
+<div><label for="version">Version</label><input id="version" value="1.1.0"></div>
+<div><label for="backend">Backend</label><select id="backend"><option value="auto">auto</option><option value="none">offline</option><option value="anthropic">Claude API</option><option value="openai">OpenAI-compatible</option><option value="claude-cli">Claude CLI</option></select></div>
+</div><div class="row" style="margin-top:10px"><div><label for="repo_url">Repo URL (adds links)</label><input id="repo_url" placeholder="https://github.com/org/repo"></div><div><label for="audience">Audience</label><select id="audience"><option>end users</option><option>developers</option><option>enterprise admins</option></select></div><div><label for="format">Format</label><select id="format"><option>markdown</option><option>json</option></select></div><div></div></div><button id="go">Generate release notes</button><div id="st">Ready.</div></div>
+<div class="out"><div class="card"><h3>Deterministic draft</h3><pre id="draft">-</pre></div><div class="card"><h3>Final output</h3><pre id="md">-</pre></div></div>
+<script>
+const $=id=>document.getElementById(id);
+fetch('/api/backends').then(r=>r.json()).then(b=>{$('st').textContent='Ready. LLM backends detected: '+(b.join(', ')||'none (offline mode)')});
+$('go').onclick=async()=>{
+ $('st').textContent='Running...';
+ const r=await fetch('/api/generate',{method:'POST',body:JSON.stringify({repo:$('repo').value,from:$('from').value,version:$('version').value,backend:$('backend').value,repo_url:$('repo_url').value,audience:$('audience').value,format:$('format').value})});
+ const d=await r.json();
+ if(d.error){$('st').textContent='Error: '+d.error;return}
+ $('draft').textContent=d.draft;$('md').textContent=d.markdown;
+ $('st').innerHTML=d.commits+' commits since <b>'+(d.from||'start')+'</b> · backend: <span class="pill">'+d.backend+'</span>';
+};
+</script></main></body></html>

@@ -2,6 +2,10 @@
 
 Turn your git history into clean, user-facing release notes in one command.
 
+![Changelog Agent web UI](docs/screenshot.png)
+
+▶ [Watch the 12-second demo](docs/demo.mp4)
+
 - **Zero dependencies.** Python 3.9+ standard library only.
 - **Works offline.** Reads Conventional Commits, groups them by section, drops `chore`/`ci`/`test`/WIP noise, and flags breaking changes with migration notes.
 - **Cleans up like an editor.** Reverted commits cancel out, near-duplicate commits merge (distinct PRs never do), PR and issue references become links, and each release gets a contributors line and a compare link.

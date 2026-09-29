@@ -9,6 +9,9 @@ CC = re.compile(r"^(?P<type>\w+)(\((?P<scope>[^)]+)\))?(?P<bang>!)?:\s*(?P<desc>
 PR_TAIL = re.compile(r"\s*\(#(\d+)\)\s*$")
 ISSUE = re.compile(r"\b(?:fix(?:e[sd])?|close[sd]?|resolve[sd]?)\s+#(\d+)", re.I)
 NOISE = re.compile(r"^(wip\b|fixup!|squash!|merge (branch|pull request|remote)|bump version|release\b)", re.I)
+DEPS_BUMP = re.compile(r"^(update|bump|upgrade|pin|lock file)\b.*\b(dependenc|deps?\b|to v?\d)|^update (all )?(non-major )?dependencies|^update (compiler|dependency)", re.I)
+INLINE_REF = re.compile(r"\s*\((?:fix(?:es)?|close[sd]?|resolve[sd]?)?\s*#\d+\)", re.I)
+BOT = re.compile(r"\[bot\]$|^(renovate|dependabot|github-actions)", re.I)
 REVERT = re.compile(r'^Revert "(?P<orig>.+)"$')
 
 SECTIONS = [
@@ -50,7 +53,9 @@ def classify(sha, author, subject, body=""):
     if m:
         c.type = m["type"].lower()
         c.scope = m["scope"] or ""
-        c.desc = m["desc"].strip().rstrip("!. ")
+        c.desc = INLINE_REF.sub("", m["desc"]).strip().rstrip("!. ")
+        if c.scope.lower() == "deps" and DEPS_BUMP.search(c.desc):
+            c.type = "chore"  # routine dependency bump: not user-facing
         c.breaking = bool(m["bang"])
     mb = re.search(r"BREAKING[ -]CHANGE:?\s*(.+)", body, re.S)
     if mb:
@@ -131,7 +136,7 @@ def group(commits):
 def contributors(commits):
     seen = []
     for c in commits:
-        if c.author not in seen:
+        if c.author not in seen and not BOT.search(c.author):
             seen.append(c.author)
     return seen
 

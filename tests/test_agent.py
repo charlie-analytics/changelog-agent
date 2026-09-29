@@ -268,5 +268,33 @@ class HashGuardrailMessage(unittest.TestCase):
         self.assertNotIn(first, md)
 
 
+
+class GroundingGuardrails(unittest.TestCase):
+    DRAFT = "## 1 - d\n\n### Features\n- Add CLI (`aaaaaaa`)\n- Add UI (`bbbbbbb`)\n"
+
+    def test_invented_breaking_and_migration_rejected(self):
+        from changelog_agent.backends import validate
+        out = "## 1 - d\n\n### Breaking Changes\n- Removed x\n  Migration: do y\n\n### Features\n- CLI (`aaaaaaa`)\n- UI (`bbbbbbb`)\n"
+        p = " ".join(validate(self.DRAFT, out))
+        self.assertIn("invented a Breaking Changes section", p)
+        self.assertIn("invented a Migration note", p)
+
+    def test_unsupported_benefit_claim_rejected(self):
+        from changelog_agent.backends import validate
+        out = "## 1 - d\n\n### Features\n- CLI with improved performance (`aaaaaaa`)\n- UI (`bbbbbbb`)\n"
+        self.assertTrue(any("unsupported claim about 'performance'" in x for x in validate(self.DRAFT, out)))
+
+    def test_claim_allowed_when_draft_states_it(self):
+        from changelog_agent.backends import validate
+        draft = "## 1 - d\n\n### Performance\n- Cache queries, faster load (`aaaaaaa`)\n"
+        out = "## 1 - d\n\n### Performance\n- Queries are cached for faster loading (`aaaaaaa`)\n"
+        self.assertEqual(validate(draft, out), [])
+
+    def test_grounded_output_passes(self):
+        from changelog_agent.backends import validate
+        out = "## 1 - d\n\n### Features\n- New command-line interface (`aaaaaaa`)\n- New web UI (`bbbbbbb`)\n"
+        self.assertEqual(validate(self.DRAFT, out), [])
+
+
 if __name__ == "__main__":
     unittest.main()

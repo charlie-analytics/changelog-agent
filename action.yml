@@ -1,0 +1,20 @@
+name: "Changelog Agent"
+description: "Turn git history into polished release notes. Offline by default, optional Claude polish."
+inputs:
+  version:      { description: "Version heading, e.g. 1.2.0", required: true }
+  from:         { description: "Start revision (default: latest tag)", required: false, default: "" }
+  audience:     { description: "Who reads the notes", required: false, default: "end users" }
+  anthropic-api-key: { description: "Optional. Enables LLM polish.", required: false, default: "" }
+  out:          { description: "File to prepend to", required: false, default: "CHANGELOG.md" }
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        PYTHONPATH: ${{ github.action_path }}
+      run: |
+        python3 -m changelog_agent --repo . ${{ inputs.from != '' && format('--from {0}', inputs.from) || '' }} \
+          --version "${{ inputs.version }}" --audience "${{ inputs.audience }}" \
+          --repo-url "${{ github.server_url }}/${{ github.repository }}" \
+          --out "${{ inputs.out }}" --print-backend

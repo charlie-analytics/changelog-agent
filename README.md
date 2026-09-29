@@ -6,6 +6,25 @@ Turn your git history into clean, user-facing release notes in one command.
 
 ▶ [Watch the 12-second demo](docs/demo.mp4)
 
+## New to Git? Start here
+
+**What this is:** Git keeps a history of every change ("save point") to your project. This tool reads that history and writes a clean `CHANGELOG.md`: what's new, what got fixed, what might break. Great if you build with ChatGPT, Claude or Cursor and lose track of what changed.
+
+**Pick one way to run it:**
+
+1. **Using Claude Code, Cursor or another AI coding tool?** Open your project and paste:
+   > Install github.com/charlie-analytics/changelog-agent with pip and use it to create a CHANGELOG.md for this project.
+2. **Using the terminal?** Inside your project folder:
+   ```bash
+   python3 -m pip install git+https://github.com/charlie-analytics/changelog-agent
+   changelog-agent --version 1.0.0 --out CHANGELOG.md
+   ```
+3. **Prefer clicking?** Run `changelog-agent-ui` and open http://127.0.0.1:8765
+
+**Tip:** ask your AI to start commit messages with `feat:` (new feature) or `fix:` (bug fix). The notes come out much better sorted.
+
+## Features
+
 - **Zero dependencies.** Python 3.9+ standard library only.
 - **Works offline.** Reads Conventional Commits, groups them by section, drops `chore`/`ci`/`test`/WIP noise, and flags breaking changes with migration notes.
 - **Cleans up like an editor.** Reverted commits cancel out, near-duplicate commits merge (distinct PRs never do), PR and issue references become links, and each release gets a contributors line and a compare link.

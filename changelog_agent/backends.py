@@ -24,12 +24,17 @@ Editorial rules:
    When you merge or group several bullets, keep EVERY one of their commit hashes on the merged bullet (e.g. `abc1234` `def5678`).
    If commits are not categorised (everything under "Other Changes"), you may re-group them into sensible sections such as Features, Fixes, Docs.
 8. NEVER invent features, numbers, dates, hashes or PR numbers. If the draft is vague, stay vague.
+   Do NOT add a "Breaking Changes" section or any "Migration" line unless the draft already has one.
+   Do NOT claim benefits (performance, reliability, security, speed, ease of use) that the draft does not state.
+   When a commit message is terse ("Update cli.py"), describe it literally and briefly; never embellish it.
 9. Output only the Markdown, no preamble or commentary.
 
 DRAFT:
 {draft}
 """
 
+# Benefit words a model likes to add on its own; allowed only if the draft already says them.
+UNGROUNDED = ("performance", "reliab", "robust", "secur", "seamless", "effortless", "streamlin", "faster", "speed")
 HASH = re.compile(r"`([0-9a-f]{7,40})`")
 NUM = re.compile(r"#(\d+)")
 
@@ -118,6 +123,15 @@ def validate(draft, out):
     for m in re.findall(r"\*\*Migration:\*\* (.+)", draft):
         if m[:25] not in out:
             problems.append("dropped a Migration note")
+    if "### Breaking Changes" in out and "### Breaking Changes" not in draft:
+        problems.append("invented a Breaking Changes section that the draft does not have")
+    if "migration" in out.lower() and "migration" not in draft.lower():
+        problems.append("invented a Migration note that the draft does not have")
+    d_low, o_low = draft.lower(), out.lower()
+    for term in UNGROUNDED:
+        if term in o_low and term not in d_low:
+            problems.append(f"unsupported claim about '{term}' (not in the draft)")
+            break
     kept = set(HASH.findall(out))
     missing = sorted(draft_hashes - kept)
     if draft_hashes and len(kept & draft_hashes) < len(draft_hashes) * 0.5:

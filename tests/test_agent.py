@@ -296,5 +296,28 @@ class GroundingGuardrails(unittest.TestCase):
         self.assertEqual(validate(self.DRAFT, out), [])
 
 
+
+class RealWorldNoise(unittest.TestCase):
+    def test_dependency_bumps_are_not_bug_fixes(self):
+        for subj in ["fix(deps): update dependency jszip to ^3.10.2 (#15502)",
+                     "fix(deps): update compiler (#15247)",
+                     "chore(deps): update all non-major dependencies (#15244)"]:
+            self.assertEqual(group([classify("a", "x", subj)]), {}, subj)
+
+    def test_real_fix_in_deps_scope_is_kept(self):
+        g = group([classify("a", "x", "fix(deps): pin broken polyfill that crashed Safari")])
+        self.assertIn("fix", g)
+
+    def test_bots_excluded_from_contributors(self):
+        from changelog_agent.gitlog import contributors
+        cs = [classify("1", "renovate[bot]", "fix: a"), classify("2", "Ann", "fix: b"),
+              classify("3", "dependabot[bot]", "fix: c")]
+        self.assertEqual(contributors(cs), ["Ann"])
+
+    def test_inline_fix_ref_stripped_but_linked(self):
+        c = classify("a", "x", "fix(sfc): reuse parsed configs (fix #15478) (#15480)")
+        self.assertEqual((c.desc, c.pr, c.issues), ("reuse parsed configs", 15480, [15478]))
+
+
 if __name__ == "__main__":
     unittest.main()
